@@ -1,9 +1,8 @@
 import { test, expect, describe } from 'bun:test';
 import { decodeRoaringBitmap } from '../src/bitmap';
 import { suiDigest } from '../src/digest';
-import { bcsCheckpointSummary } from '../src/bcs';
 import { verifyCheckpoint, PreparedCommittee } from '../src/verify';
-import type { Committee, CheckpointSummary, AuthorityQuorumSignInfo } from '../src/types';
+import type { Committee, AuthorityQuorumSignInfo } from '../src/types';
 
 describe('RoaringBitmap', () => {
 	test('decodes array container (cookie 12346)', () => {
@@ -63,7 +62,8 @@ describe('Digest', () => {
 });
 
 describe('BCS', () => {
-	test('CheckpointSummary round-trips through BCS', () => {
+	test('CheckpointSummary round-trips through BCS', async () => {
+		const { bcsCheckpointSummary } = await import('../src/bcs');
 		const summary = {
 			epoch: 100n,
 			sequenceNumber: 50000n,
@@ -108,8 +108,8 @@ describe('Checkpoint verification (testnet)', () => {
 		const signerIndices = decodeRoaringBitmap(sig.bitmap!);
 		console.log(`Signers: ${signerIndices.length}`);
 
-		// Fetch committee for this epoch via JSON RPC
-		const epoch = cp.summary!.epoch!.toString();
+		// Fetch committee for this epoch
+		const epoch = sig.epoch!.toString();
 		const committeeResp = await fetch('https://fullnode.testnet.sui.io:443', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -132,36 +132,15 @@ describe('Checkpoint verification (testnet)', () => {
 			})),
 		};
 
-		// Parse the BCS summary to get our typed CheckpointSummary
-		const parsed = bcsCheckpointSummary.parse(summaryBcs);
-
-		const checkpointSummary: CheckpointSummary = {
-			epoch: BigInt(parsed.epoch),
-			sequenceNumber: BigInt(parsed.sequenceNumber),
-			networkTotalTransactions: BigInt(parsed.networkTotalTransactions),
-			contentDigest: Uint8Array.from(parsed.contentDigest),
-			previousDigest: parsed.previousDigest ? Uint8Array.from(parsed.previousDigest) : null,
-			epochRollingGasCostSummary: {
-				computationCost: BigInt(parsed.epochRollingGasCostSummary.computationCost),
-				storageCost: BigInt(parsed.epochRollingGasCostSummary.storageCost),
-				storageRebate: BigInt(parsed.epochRollingGasCostSummary.storageRebate),
-				nonRefundableStorageFee: BigInt(parsed.epochRollingGasCostSummary.nonRefundableStorageFee),
-			},
-			timestampMs: BigInt(parsed.timestampMs),
-			checkpointCommitments: parsed.checkpointCommitments,
-			endOfEpochData: parsed.endOfEpochData,
-			versionSpecificData: Uint8Array.from(parsed.versionSpecificData),
-		};
-
 		const authSignature: AuthorityQuorumSignInfo = {
 			epoch: BigInt(sig.epoch!),
 			signature: sig.signature!,
 			signersMap: sig.bitmap!,
 		};
 
-		// Verify with raw committee (cold path, ~150ms)
+		// Verify with raw BCS bytes + raw committee (cold path)
 		let t = performance.now();
-		verifyCheckpoint(checkpointSummary, authSignature, committee);
+		verifyCheckpoint(summaryBcs, authSignature, committee);
 		console.log(`✓ Cold verify: ${(performance.now() - t).toFixed(1)}ms`);
 
 		// Verify with PreparedCommittee (warm path, ~10ms)
@@ -170,7 +149,7 @@ describe('Checkpoint verification (testnet)', () => {
 		console.log(`  PreparedCommittee init: ${(performance.now() - t).toFixed(1)}ms (one-time per epoch)`);
 
 		t = performance.now();
-		verifyCheckpoint(checkpointSummary, authSignature, prepared);
+		verifyCheckpoint(summaryBcs, authSignature, prepared);
 		console.log(`✓ Prepared verify: ${(performance.now() - t).toFixed(1)}ms`);
 	}, 30_000);
 });

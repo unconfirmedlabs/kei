@@ -7,10 +7,8 @@
  *   bun src/cli.ts verify-range <from> <to> [--url <fullnode_url>]
  */
 
-import { bcsCheckpointSummary } from './bcs.js';
 import { decodeRoaringBitmap } from './bitmap.js';
 import { verifyCheckpoint, PreparedCommittee } from './verify.js';
-import { parseBcsSummary } from './parse.js';
 import type { Committee, AuthorityQuorumSignInfo } from './types.js';
 
 type Network = 'testnet' | 'mainnet';
@@ -106,14 +104,12 @@ async function fetchCommittee(url: string, epoch: string): Promise<Committee> {
 	};
 }
 
-function parseCheckpointData(cp: GrpcCheckpoint) {
-	const summary = parseBcsSummary(cp.summary.bcs.value);
-	const authSignature: AuthorityQuorumSignInfo = {
+function extractAuthSignature(cp: GrpcCheckpoint): AuthorityQuorumSignInfo {
+	return {
 		epoch: cp.signature.epoch,
 		signature: cp.signature.signature,
 		signersMap: cp.signature.bitmap,
 	};
-	return { summary, authSignature };
 }
 
 async function verifySingle(seq: number, network: Network, url: string) {
@@ -124,17 +120,18 @@ async function verifySingle(seq: number, network: Network, url: string) {
 	const cp = await fetchCheckpoint(network, url, seq);
 	console.log(` ${(performance.now() - t).toFixed(0)}ms`);
 
-	const { summary, authSignature } = parseCheckpointData(cp);
+	const summaryBcs = cp.summary.bcs.value;
+	const authSignature = extractAuthSignature(cp);
 	const signers = decodeRoaringBitmap(authSignature.signersMap);
 
-	process.stdout.write(`Fetching committee for epoch ${summary.epoch}...`);
+	process.stdout.write(`Fetching committee for epoch ${authSignature.epoch}...`);
 	t = performance.now();
-	const committee = await fetchCommittee(url, summary.epoch.toString());
+	const committee = await fetchCommittee(url, authSignature.epoch.toString());
 	console.log(` ${(performance.now() - t).toFixed(0)}ms (${committee.members.length} validators)`);
 
 	process.stdout.write(`Verifying signature (${signers.length} signers)...`);
 	t = performance.now();
-	verifyCheckpoint(summary, authSignature, committee);
+	verifyCheckpoint(summaryBcs, authSignature, committee);
 	console.log(` ${(performance.now() - t).toFixed(0)}ms`);
 
 	console.log(`\nCheckpoint ${seq} verified in ${(performance.now() - total).toFixed(0)}ms`);
@@ -147,12 +144,12 @@ async function verifyRange(from: number, to: number, network: Network, url: stri
 	process.stdout.write('Fetching first checkpoint...');
 	let t = performance.now();
 	const firstCp = await fetchCheckpoint(network, url, from);
-	const { summary: firstSummary } = parseCheckpointData(firstCp);
-	console.log(` epoch ${firstSummary.epoch} (${(performance.now() - t).toFixed(0)}ms)`);
+	const firstAuth = extractAuthSignature(firstCp);
+	console.log(` epoch ${firstAuth.epoch} (${(performance.now() - t).toFixed(0)}ms)`);
 
 	process.stdout.write('Preparing committee...');
 	t = performance.now();
-	const committee = await fetchCommittee(url, firstSummary.epoch.toString());
+	const committee = await fetchCommittee(url, firstAuth.epoch.toString());
 	const prepared = new PreparedCommittee(committee);
 	console.log(` ${committee.members.length} validators, ${(performance.now() - t).toFixed(0)}ms\n`);
 
@@ -165,11 +162,11 @@ async function verifyRange(from: number, to: number, network: Network, url: stri
 		const cp = await fetchCheckpoint(network, url, seq);
 		const fetchMs = performance.now() - t;
 
-		const { summary, authSignature } = parseCheckpointData(cp);
+		const authSignature = extractAuthSignature(cp);
 		const signers = decodeRoaringBitmap(authSignature.signersMap);
 
 		t = performance.now();
-		verifyCheckpoint(summary, authSignature, prepared);
+		verifyCheckpoint(cp.summary.bcs.value, authSignature, prepared);
 		const verifyMs = performance.now() - t;
 		totalVerifyMs += verifyMs;
 		verified++;

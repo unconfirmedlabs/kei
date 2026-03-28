@@ -78,9 +78,7 @@ export function decodeRoaringBitmap(data: Uint8Array): number[] {
 		const cardinality = cardinalities[i];
 
 		if (isRunBitmap[i]) {
-			// Run container: pairs of [start: u16, length: u16]
-			// Number of runs is stored as (numberOfRuns - 1) in the cardinality field?
-			// No — for run containers, the data starts with a u16 run count.
+			// Run container: u16 run count, then pairs of [start: u16, length: u16]
 			const numRuns = view.getUint16(offset, true);
 			offset += 2;
 			for (let r = 0; r < numRuns; r++) {

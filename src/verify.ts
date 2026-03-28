@@ -6,7 +6,6 @@
  */
 
 import { bls12_381 } from '@noble/curves/bls12-381';
-import { bcs } from '@mysten/bcs';
 import { decodeRoaringBitmap } from './bitmap.js';
 import { checkpointContentsDigest } from './digest.js';
 import {
@@ -18,7 +17,7 @@ import {
 	type Committee,
 	type ExecutionDigests,
 } from './types.js';
-import { bcsCheckpointSummary, bcsCheckpointContents } from './bcs.js';
+import { bcsCheckpointContents } from './bcs.js';
 
 type G2Point = ReturnType<typeof bls12_381.G2.ProjectivePoint.fromHex>;
 
@@ -45,17 +44,16 @@ export class PreparedCommittee {
 }
 
 /**
- * Verify a checkpoint certificate against a prepared committee.
+ * Verify a checkpoint certificate against a committee.
  *
- * Checks that:
- * 1. The signature epoch matches the committee epoch
- * 2. The signing validators have enough voting power (≥6667/10000)
- * 3. The BLS aggregate signature is valid
+ * Takes the raw BCS bytes of the CheckpointSummary — the exact bytes
+ * that validators signed. Using raw bytes avoids re-serialization which
+ * could introduce subtle mismatches.
  *
  * ~10ms per checkpoint with a PreparedCommittee (vs ~150ms without).
  */
 export function verifyCheckpoint(
-	summary: CheckpointSummary,
+	summaryBcs: Uint8Array,
 	authSignature: AuthorityQuorumSignInfo,
 	committee: Committee | PreparedCommittee,
 ): void {
@@ -91,24 +89,25 @@ export function verifyCheckpoint(
 		);
 	}
 
-	// Reconstruct the signed message:
-	// BCS(IntentMessage<CheckpointSummary>) || BCS(epoch)
-	const summaryBcs = bcsCheckpointSummary.serialize(summary).toBytes();
-	const epochBcs = bcs.u64().serialize(authSignature.epoch).toBytes();
+	// Reconstruct the signed message using the raw BCS bytes:
+	// [Intent(3 bytes)] || [CheckpointSummary BCS] || [epoch as u64 LE(8 bytes)]
+	const epochBytes = new Uint8Array(8);
+	const epochView = new DataView(epochBytes.buffer);
+	epochView.setBigUint64(0, authSignature.epoch, true);
 
 	const message = new Uint8Array(
-		CHECKPOINT_SUMMARY_INTENT.length + summaryBcs.length + epochBcs.length,
+		CHECKPOINT_SUMMARY_INTENT.length + summaryBcs.length + epochBytes.length,
 	);
 	message.set(CHECKPOINT_SUMMARY_INTENT);
 	message.set(summaryBcs, CHECKPOINT_SUMMARY_INTENT.length);
-	message.set(epochBcs, CHECKPOINT_SUMMARY_INTENT.length + summaryBcs.length);
+	message.set(epochBytes, CHECKPOINT_SUMMARY_INTENT.length + summaryBcs.length);
 
 	// Hash message to G1 curve and verify BLS signature (min-sig mode)
 	const hashedMessage = bls12_381.shortSignatures.hash(message);
 	const valid = bls12_381.shortSignatures.verify(
 		authSignature.signature,
 		hashedMessage,
-		aggregatedPoint!.toRawBytes(true), // compressed G2 bytes for verify()
+		aggregatedPoint!.toRawBytes(true),
 	);
 
 	if (!valid) {
