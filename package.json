@@ -5,9 +5,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
+  "bin": {
+    "sui-light-client": "src/cli.ts"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node",
-    "test": "bun test"
+    "test": "bun test",
+    "verify": "bun src/cli.ts verify"
   },
   "dependencies": {
     "@noble/curves": "^1.8.0",

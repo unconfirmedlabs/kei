@@ -36,6 +36,40 @@ Genesis → Committee₀ → verify Checkpoint₀ → Committee₁ → verify Ch
 
 No WASM needed. The bottleneck was G2 point deserialization, not the BLS pairing math — `PreparedCommittee` pre-parses all public keys once per epoch, making per-checkpoint aggregation <1ms (point additions instead of decompression).
 
+## CLI
+
+Try it out against live checkpoints:
+
+```sh
+# Verify a single checkpoint
+bun src/cli.ts verify 318460000
+
+# Verify a range (uses PreparedCommittee for bulk speed)
+bun src/cli.ts verify-range 318460000 318460009
+
+# Against mainnet
+bun src/cli.ts verify 318460000 --url https://fullnode.mainnet.sui.io
+```
+
+```
+$ bun src/cli.ts verify-range 318460000 318460009
+
+Verifying 10 checkpoints (318460000 → 318460009)
+
+Fetching first checkpoint... epoch 1052 (204ms)
+Preparing committee... 118 validators, 232ms
+
+  [1/10]  seq=318460000  signers=74  fetch=111ms  verify=78ms
+  [2/10]  seq=318460001  signers=73  fetch=95ms   verify=11ms
+  [3/10]  seq=318460002  signers=76  fetch=176ms  verify=11ms
+  ...
+  [10/10] seq=318460009  signers=75  fetch=96ms   verify=10ms
+
+10 checkpoints verified in 1.3s
+Avg verify: 17.4ms/checkpoint
+Throughput: 7.5 checkpoints/sec (including network)
+```
+
 ## Usage
 
 ```typescript
