@@ -1,15 +1,16 @@
 {
   "name": "@unconfirmed/kei",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "bin": {
-    "kei": "src/cli.ts"
+    "kei": "dist/cli.js"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node --external '@noble/*' --external '@mysten/*' && bunx tsc --emitDeclarationOnly --outDir dist",
+    "prepublishOnly": "bun run build",
+    "build": "bun build src/index.ts --outdir dist --target node --external '@noble/*' --external '@mysten/*' && bun build src/cli.ts --outdir dist --target node --external '@noble/*' --external '@mysten/*' && bunx tsc --emitDeclarationOnly --outDir dist",
     "test": "bun test",
     "verify": "bun src/cli.ts verify"
   },

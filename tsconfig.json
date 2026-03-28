@@ -5,6 +5,10 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
+    "paths": {
+      "@noble/hashes/*": ["./node_modules/@noble/hashes/*"],
+      "@noble/curves/*": ["./node_modules/@noble/curves/*"]
+    },
     "declaration": true,
     "outDir": "dist",
     "lib": ["ESNext"],
