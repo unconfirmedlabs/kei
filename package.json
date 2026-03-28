@@ -9,7 +9,7 @@
     "kei": "src/cli.ts"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node",
+    "build": "bun build src/index.ts --outdir dist --target node --external '@noble/*' --external '@mysten/*' && bunx tsc --emitDeclarationOnly --outDir dist",
     "test": "bun test",
     "verify": "bun src/cli.ts verify"
   },
