@@ -147,7 +147,7 @@ export function verifyTransactionInCheckpoint(
 	throw new Error('Transaction not found in checkpoint contents');
 }
 
-function digestsEqual(a: Uint8Array, b: Uint8Array): boolean {
+export function digestsEqual(a: Uint8Array, b: Uint8Array): boolean {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
 		if (a[i] !== b[i]) return false;

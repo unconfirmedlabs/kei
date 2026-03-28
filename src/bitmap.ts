@@ -10,10 +10,13 @@ const SERIAL_COOKIE = 12347;
 
 /** Decode a serialized RoaringBitmap into a sorted array of set bit positions. */
 export function decodeRoaringBitmap(data: Uint8Array): number[] {
+	if (data.byteLength < 8) {
+		throw new Error(`RoaringBitmap too small: ${data.byteLength} bytes`);
+	}
+
 	const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
 	let offset = 0;
 
-	// Peek at first 4 bytes to detect format
 	const firstU32 = view.getUint32(0, true);
 	const firstU16 = firstU32 & 0xffff;
 

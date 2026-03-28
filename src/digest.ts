@@ -2,12 +2,14 @@
 
 import { blake2b } from '@noble/hashes/blake2b';
 
+const encoder = new TextEncoder();
+
 /**
  * Compute a Sui digest: Blake2b-256("StructName::" || data)
  * All Sui digests follow this pattern for domain separation.
  */
 export function suiDigest(structName: string, bcsBytes: Uint8Array): Uint8Array {
-	const prefix = new TextEncoder().encode(`${structName}::`);
+	const prefix = encoder.encode(`${structName}::`);
 	const input = new Uint8Array(prefix.length + bcsBytes.length);
 	input.set(prefix);
 	input.set(bcsBytes, prefix.length);

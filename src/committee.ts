@@ -33,6 +33,10 @@ export function verifyCommitteeTransition(
 		votingPower,
 	}));
 
+	if (members.length === 0) {
+		throw new Error('End-of-epoch checkpoint has empty next committee');
+	}
+
 	return { epoch: nextEpoch, members };
 }
 

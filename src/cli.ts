@@ -87,7 +87,7 @@ async function fetchCheckpoint(network: Network, url: string, seq: number): Prom
 }
 
 async function fetchCommittee(url: string, epoch: string): Promise<Committee> {
-	const resp = await fetch(`${url}:443`, {
+	const resp = await fetch(url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

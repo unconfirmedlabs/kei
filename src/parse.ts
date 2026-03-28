@@ -40,7 +40,7 @@ function convertCommitment(c: BcsParsed['checkpointCommitments'][number]): Check
 	if ('CheckpointArtifactsDigest' in c && c.CheckpointArtifactsDigest) {
 		return { CheckpointArtifactsDigest: Uint8Array.from(c.CheckpointArtifactsDigest) };
 	}
-	return c as CheckpointCommitment;
+	throw new Error(`Unknown CheckpointCommitment variant: ${JSON.stringify(c)}`);
 }
 
 function convertEndOfEpochData(e: NonNullable<BcsParsed['endOfEpochData']>): EndOfEpochData {
