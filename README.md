@@ -10,12 +10,12 @@ No native dependencies — works in browsers, Cloudflare Workers, Bun, and Node.
 
 ## How it works
 
-Sui validators sign checkpoint summaries using BLS12-381 aggregate signatures. A checkpoint is valid if validators holding ≥66.67% of voting power (6667/10000) have signed it. Kei:
+Sui validators sign checkpoint summaries using BLS12-381 aggregate signatures. A checkpoint is valid if validators holding ≥66.67% of weight (6667/10000) have signed it. Kei:
 
 1. **Decodes the signers bitmap** (RoaringBitmap) to identify which validators signed
 2. **Aggregates their BLS public keys** (G2 points in min-sig mode)
 3. **Verifies the aggregate signature** against the BCS-serialized checkpoint summary
-4. **Validates quorum** — total voting power of signers must meet the threshold
+4. **Validates quorum** — total weight of signers must meet the threshold
 
 Once a checkpoint is verified, any data committed to it (transactions, objects, events) can be trusted via hash chains.
 
@@ -85,9 +85,9 @@ import {
 // Build committee from validator data (once per epoch)
 const committee = {
   epoch: 1052n,
-  members: validators.map(({ publicKey, votingPower }) => ({
+  members: validators.map(({ publicKey, weight }) => ({
     publicKey, // 96-byte BLS12-381 G2 compressed
-    votingPower,
+    weight,
   })),
 };
 

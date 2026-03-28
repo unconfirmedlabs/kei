@@ -72,7 +72,7 @@ export interface CheckpointContents {
 
 export interface CommitteeMember {
 	publicKey: AuthorityPublicKeyBytes;
-	votingPower: bigint;
+	weight: bigint;
 }
 
 export interface Committee {
@@ -82,7 +82,7 @@ export interface Committee {
 
 // --- Constants ---
 
-export const TOTAL_VOTING_POWER = 10_000n;
+export const TOTAL_WEIGHT = 10_000n;
 export const QUORUM_THRESHOLD = 6_667n;
 
 // Intent bytes for CheckpointSummary signing

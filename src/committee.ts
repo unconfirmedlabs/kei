@@ -27,9 +27,9 @@ export function verifyCommitteeTransition(
 	}
 
 	const nextEpoch = summary.epoch + 1n;
-	const members = summary.endOfEpochData.nextEpochCommittee.map(([publicKey, votingPower]) => ({
+	const members = summary.endOfEpochData.nextEpochCommittee.map(([publicKey, weight]) => ({
 		publicKey: Uint8Array.from(publicKey),
-		votingPower,
+		weight,
 	}));
 
 	if (members.length === 0) {

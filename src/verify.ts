@@ -32,13 +32,13 @@ type G2Point = ReturnType<typeof bls12_381.G2.ProjectivePoint.fromHex>;
  */
 export class PreparedCommittee {
 	readonly epoch: bigint;
-	readonly members: { point: G2Point; votingPower: bigint }[];
+	readonly members: { point: G2Point; weight: bigint }[];
 
 	constructor(committee: Committee) {
 		this.epoch = committee.epoch;
 		this.members = committee.members.map((m) => ({
 			point: bls12_381.G2.ProjectivePoint.fromHex(m.publicKey),
-			votingPower: m.votingPower,
+			weight: m.weight,
 		}));
 	}
 }
@@ -70,7 +70,7 @@ export function verifyCheckpoint(
 	// Decode signer indices from RoaringBitmap
 	const signerIndices = decodeRoaringBitmap(authSignature.signersMap);
 
-	// Aggregate pre-parsed G2 points and sum voting power
+	// Aggregate pre-parsed G2 points and sum weight
 	let totalPower = 0n;
 	let aggregatedPoint: G2Point | null = null;
 
@@ -79,13 +79,13 @@ export function verifyCheckpoint(
 			throw new Error(`Signer index ${idx} exceeds committee size ${prepared.members.length}`);
 		}
 		const member = prepared.members[idx];
-		totalPower += member.votingPower;
+		totalPower += member.weight;
 		aggregatedPoint = aggregatedPoint ? aggregatedPoint.add(member.point) : member.point;
 	}
 
 	if (totalPower < QUORUM_THRESHOLD) {
 		throw new Error(
-			`Insufficient voting power: ${totalPower} < ${QUORUM_THRESHOLD} (${signerIndices.length}/${prepared.members.length} validators)`,
+			`Insufficient weight: ${totalPower} < ${QUORUM_THRESHOLD} (${signerIndices.length}/${prepared.members.length} validators)`,
 		);
 	}
 

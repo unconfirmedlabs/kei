@@ -99,7 +99,7 @@ async function fetchCommittee(url: string, epoch: string): Promise<Committee> {
 		epoch: BigInt(epoch),
 		members: json.result.validators.map(([pk, stake]) => ({
 			publicKey: new Uint8Array(Buffer.from(pk, 'base64')),
-			votingPower: BigInt(stake),
+			weight: BigInt(stake),
 		})),
 	};
 }

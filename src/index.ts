@@ -16,4 +16,4 @@ export type {
 	GasCostSummary,
 	CheckpointCommitment,
 } from './types.js';
-export { TOTAL_VOTING_POWER, QUORUM_THRESHOLD, CHECKPOINT_SUMMARY_INTENT } from './types.js';
+export { TOTAL_WEIGHT, QUORUM_THRESHOLD, CHECKPOINT_SUMMARY_INTENT } from './types.js';

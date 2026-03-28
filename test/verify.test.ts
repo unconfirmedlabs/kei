@@ -128,7 +128,7 @@ describe('Checkpoint verification (testnet)', () => {
 			epoch: BigInt(epoch),
 			members: validators.map(([pk, stake]) => ({
 				publicKey: new Uint8Array(Buffer.from(pk, 'base64')),
-				votingPower: BigInt(stake),
+				weight: BigInt(stake),
 			})),
 		};
 
