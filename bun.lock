@@ -8,6 +8,7 @@
         "@mysten/bcs": "^1.3.0",
         "@noble/curves": "^1.8.0",
         "@noble/hashes": "^1.7.0",
+        "@unconfirmed/kei": "0.0.5",
       },
       "devDependencies": {
         "@mysten/sui": "^2.13.0",
@@ -49,6 +50,8 @@
     "@scure/bip39": ["@scure/bip39@2.0.1", "", { "dependencies": { "@noble/hashes": "2.0.1", "@scure/base": "2.0.0" } }, "sha512-PsxdFj/d2AcJcZDX1FXN3dDgitDDTmwf78rKZq1a6c1P1Nan1X/Sxc7667zU3U+AN60g7SxxP0YCVw2H/hBycg=="],
 
     "@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
+
+    "@unconfirmed/kei": ["@unconfirmed/kei@0.0.5", "", { "dependencies": { "@mysten/bcs": "^1.3.0", "@noble/curves": "^1.8.0", "@noble/hashes": "^1.7.0" }, "bin": { "kei": "dist/cli.js" } }, "sha512-VWeiStLapqD4IAjL6QNapGjsXrLwsrvaEsNth33fjLwF/lFog5GgJkydl/4MRiMOd5hSTlZAN2+LOFaPW9u5og=="],
 
     "bun-types": ["bun-types@1.3.11", "", { "dependencies": { "@types/node": "*" } }, "sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg=="],
 
