@@ -1,4 +1,4 @@
-# Kei (軽)
+# Kei
 
 Lightweight Sui light client in pure TypeScript. Verify checkpoint signatures, committee transitions, and transaction inclusion using BLS12-381.
 
