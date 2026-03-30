@@ -22,6 +22,37 @@ import { bcsCheckpointContents, bcsTransactionEffects } from './bcs.js';
 
 type G2Point = ReturnType<typeof bls12_381.G2.ProjectivePoint.fromHex>;
 
+// --- Parsed effects shapes (from bcsTransactionEffects.parse) ---
+
+interface ParsedObjectRef {
+	objectId: Uint8Array;
+	digest: number[];
+}
+
+interface ParsedEffectsV1 {
+	eventsDigest: number[] | null;
+	created: [ParsedObjectRef, unknown][];
+	mutated: [ParsedObjectRef, unknown][];
+	unwrapped: [ParsedObjectRef, unknown][];
+	deleted: ParsedObjectRef[];
+	unwrappedThenDeleted: ParsedObjectRef[];
+	wrapped: ParsedObjectRef[];
+}
+
+interface ParsedObjectChange {
+	outputState: {
+		ObjectWrite?: [number[], unknown];
+		PackageWrite?: [string, number[]];
+	};
+}
+
+interface ParsedEffectsV2 {
+	eventsDigest: number[] | null;
+	changedObjects: [Uint8Array, ParsedObjectChange][];
+}
+
+type ParsedEffects = { V1: ParsedEffectsV1; V2?: undefined } | { V2: ParsedEffectsV2; V1?: undefined };
+
 /**
  * A committee with pre-parsed G2 public key points.
  *
@@ -164,9 +195,9 @@ export function verifyTransactionEffects(
 		throw new Error('Transaction effects digest mismatch');
 	}
 
-	const parsed = bcsTransactionEffects.parse(effectsBcs);
-	const eventsDigest = 'V1' in parsed ? parsed.V1.eventsDigest : parsed.V2.eventsDigest;
-	return eventsDigest ? Uint8Array.from(eventsDigest) : null;
+	const parsed = bcsTransactionEffects.parse(effectsBcs) as ParsedEffects;
+	const variant = parsed.V1 ?? parsed.V2;
+	return variant.eventsDigest ? Uint8Array.from(variant.eventsDigest) : null;
 }
 
 /**
@@ -196,19 +227,19 @@ export function verifyObjectInEffects(
 	objectId: Uint8Array,
 	effectsBcs: Uint8Array,
 ): Digest | null {
-	const parsed = bcsTransactionEffects.parse(effectsBcs);
+	const parsed = bcsTransactionEffects.parse(effectsBcs) as ParsedEffects;
 
-	if ('V2' in parsed) {
+	if (parsed.V2) {
 		for (const [addr, change] of parsed.V2.changedObjects) {
 			if (!digestsEqual(addr, objectId)) continue;
 
-			const out = change.outputState;
-			if ('ObjectWrite' in out) return Uint8Array.from(out.ObjectWrite[0]);
-			if ('PackageWrite' in out) return Uint8Array.from(out.PackageWrite[1]);
+			const { outputState } = change;
+			if (outputState.ObjectWrite) return Uint8Array.from(outputState.ObjectWrite[0]);
+			if (outputState.PackageWrite) return Uint8Array.from(outputState.PackageWrite[1]);
 			// NotExist or AccumulatorWriteV1 — object deleted or accumulator
 			return null;
 		}
-	} else if ('V1' in parsed) {
+	} else if (parsed.V1) {
 		const v1 = parsed.V1;
 		// created, mutated, unwrapped have (ObjectRef, Owner) tuples
 		for (const list of [v1.created, v1.mutated, v1.unwrapped]) {

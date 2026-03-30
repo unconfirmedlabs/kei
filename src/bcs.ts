@@ -125,13 +125,20 @@ const StructTag = bcs.struct('StructTag', {
 	typeParams: bcs.lazy(() => bcs.vector(TypeTag)),
 });
 
-const TypeTag: ReturnType<typeof bcs.enum> = bcs.enum('TypeTag', {
+// TypeTag is recursive (vector → TypeTag, struct → TypeTag[]).
+// TypeScript cannot infer recursive BCS enums; the Sui SDK has the same limitation.
+// Only used internally for AccumulatorAddress in effects parsing.
+// TypeScript cannot infer recursive BCS enums; the Sui SDK has the same limitation.
+// Only used internally for AccumulatorAddress in effects parsing.
+// @ts-ignore — recursive self-reference in bcs.lazy
+const TypeTag = bcs.enum('TypeTag', {
 	bool: null,
 	u8: null,
 	u64: null,
 	u128: null,
 	address: null,
 	signer: null,
+	// @ts-ignore — recursive self-reference
 	vector: bcs.lazy(() => TypeTag),
 	struct: StructTag,
 	u16: null,
